@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Env files (never commit real secrets)
+.env
+!.env.example
+
+# Node
+node_modules/
+dist/
+
+# Generated data (uploaded documents & vector store are runtime data, not source)
+documents/*
+!documents/.gitkeep
+vectordb/*
+!vectordb/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db

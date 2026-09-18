@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: smartcampus-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: smartcampus_ai
+      MYSQL_USER: smartcampus
+      MYSQL_PASSWORD: smartcampus_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: smartcampus-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  backend:
+    build:
+      context: ./backend
+    container_name: smartcampus-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: mysql+pymysql://smartcampus:smartcampus_password@mysql:3306/smartcampus_ai
+      OLLAMA_BASE_URL: http://ollama:11434
+      VECTOR_STORE_PATH: /app/vectordb
+      DOCUMENTS_PATH: /app/documents
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - vectordb_data:/app/vectordb
+      - documents_data:/app/documents
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: smartcampus-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  mysql_data:
+  ollama_data:
+  vectordb_data:
+  documents_data:
